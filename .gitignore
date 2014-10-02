@@ -1,0 +1,20 @@
+# Gradle Directories
+/.gradle
+/.settings
+/build
+/eclipse
+/gradle
+
+# Gradle Files
+/.classpath
+/.project
+/gradlew
+/gradlew.bat
+
+# Forge Files
+/*-fml.txt
+/forge-*-changelog.txt
+/MinecraftForge-*.txt
+/README.txt
+/bin
+/logs
