@@ -1,47 +1,50 @@
 package mods.alice.rana;
 
-import mods.alice.rana.utility.TypeTransformer;
-import net.minecraftforge.common.Configuration;
-import net.minecraftforge.common.Property;
+import java.io.File;
+
+import cpw.mods.fml.client.event.ConfigChangedEvent;
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.common.config.ConfigCategory;
+import net.minecraftforge.common.config.Configuration;
+import mods.alice.rana.entity.passive.EntityRana;
 
 public final class ModConfig
 {
-	public static byte idEntityRana;
-	public static float rarityRana;
-	public static short limitRana;
+	public Configuration configFile;
 
-	public static void loadConfigurations(Configuration config)
+	public ModConfig(File configFilePath)
 	{
-		Property p;
-
-		config.load();
-
-		p = config.get("entity", "Rana", 38);
-		p.comment = "EntityId for Rana.";
-		idEntityRana = getEntityId(p);
-
-		p = config.get(Configuration.CATEGORY_GENERAL, "RarityRana", 5D);
-		p.comment = "Rarity of Rana when spawn.";
-		rarityRana = (float)p.getDouble(5);
-
-		p = config.get(Configuration.CATEGORY_GENERAL, "LimitRana", 50);
-		limitRana = (short)p.getInt();
-
-		config.save();
+		this.configFile = new Configuration(configFilePath);
 	}
 
-	static byte getEntityId(Property p)
+	@SubscribeEvent
+	public void onConfigChanged(ConfigChangedEvent.OnConfigChangedEvent eventArgs)
 	{
-		return TypeTransformer.truncateIntToUnsignedByte(Math.min(Math.max(p.getInt(), 0), 255));
+		if(eventArgs.modID.equals("ranamob"))
+		{
+			this.syncConfig();
+		}
 	}
 
-	static short getItemId(Property p)
+	public void syncConfig()
 	{
-		return (short)Math.min(Math.max(p.getInt(), 4096 - 256), 32767 - 256);
+		EntityRana.rarityRana = configFile.getFloat("RarityRana", Configuration.CATEGORY_GENERAL, 5F, 1F, 1000F, "Rarity of Rana when spawn.");
+		EntityRana.limitRana = configFile.getInt("LimitRana", Configuration.CATEGORY_GENERAL, 50, 1, 256, "");
+
+		if(this.configFile.hasChanged())
+		{
+			this.configFile.save();
+		}
 	}
 
-	static short getBlockId(Property p)
+	public ConfigCategory getCategory(String category)
 	{
-		return (short)Math.min(Math.max(p.getInt(), 1), 4095);
+		return this.configFile.getCategory(category);
+	}
+
+	@Override
+	public String toString()
+	{
+		return this.configFile.toString();
 	}
 }

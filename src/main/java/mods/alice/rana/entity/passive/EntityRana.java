@@ -1,35 +1,63 @@
 package mods.alice.rana.entity.passive;
 
-import mods.alice.rana.ModConfig;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityAgeable;
+import net.minecraft.entity.SharedMonsterAttributes;
 import net.minecraft.entity.ai.EntityAILookIdle;
 import net.minecraft.entity.ai.EntityAIPanic;
 import net.minecraft.entity.ai.EntityAISwimming;
+import net.minecraft.entity.ai.EntityAITempt;
 import net.minecraft.entity.ai.EntityAIWander;
 import net.minecraft.entity.ai.EntityAIWatchClosest;
+import net.minecraft.entity.ai.attributes.IAttributeInstance;
 import net.minecraft.entity.passive.EntityAnimal;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.DamageSource;
 import net.minecraft.world.World;
 
-public class EntityRana extends EntityAnimal
+public final class EntityRana extends EntityAnimal
 {
+	public static float rarityRana;
+	public static int limitRana;
+	public static final Item APPLE;
+	public static final Item GOLDENAPPLE;
+
+	static
+	{
+		APPLE = (Item)Item.itemRegistry.getObject("apple");
+		GOLDENAPPLE = (Item)Item.itemRegistry.getObject("golden_apple");
+	}
+
 	public EntityRana(World world)
 	{
 		super(world);
-		texture = "/mods/alice/rana/mob/newrana.png";
-		moveSpeed = 0.25F;
-		setSize(0.6F, 1.65F);
 
-		tasks.addTask(0, new EntityAISwimming(this));
-		tasks.addTask(1, new EntityAIPanic(this, moveSpeed * 1.5F));
-		tasks.addTask(2, new EntityAIWander(this, moveSpeed));
-		tasks.addTask(3, new EntityAIWatchClosest(this, Entity.class, 6F));
-		tasks.addTask(4, new EntityAILookIdle(this));
-		//targetTasks.addTask(1, new EntityAIHurtByTarget(this, true));
+		this.setSize(0.6F, 1.65F);
+
+		this.tasks.addTask(0, new EntityAISwimming(this));
+		this.tasks.addTask(1, new EntityAIPanic(this, 1.2D));
+		this.tasks.addTask(2, new EntityAIWander(this, 1D));
+		this.tasks.addTask(3, new EntityAITempt(this, 1D, EntityRana.APPLE, false));
+		this.tasks.addTask(3, new EntityAITempt(this, 1.5D, EntityRana.GOLDENAPPLE, false));
+		this.tasks.addTask(4, new EntityAIWatchClosest(this, Entity.class, 6F, 0.05F));
+		this.tasks.addTask(5, new EntityAILookIdle(this));
+
+		//this.targetTasks.addTask(1, new EntityAIHurtByTarget(this, true));
+	}
+
+	@Override
+	protected void applyEntityAttributes()
+	{
+		super.applyEntityAttributes();
+
+		IAttributeInstance attr = this.getEntityAttribute(SharedMonsterAttributes.movementSpeed);
+		attr.setBaseValue(0.25);
+
+		attr = this.getEntityAttribute(SharedMonsterAttributes.maxHealth);
+		attr.setBaseValue(14D);
 	}
 
 	@Override
@@ -39,26 +67,19 @@ public class EntityRana extends EntityAnimal
 	}
 
 	@Override
-	protected void damageEntity(DamageSource source, int amount)
+	public boolean attackEntityFrom(DamageSource source, float amount)
 	{
 		if(source.damageType.compareTo("cactus") != 0)
 		{
-			super.damageEntity(source, amount);
+			return super.attackEntityFrom(source, amount);
 		}
+		return false;
 	}
 
 	@Override
 	public void onUpdate()
 	{
 		super.onUpdate();
-	}
-
-	@Override
-	public boolean isInRangeToRenderDist(double d)
-	{
-		double d1 = boundingBox.getAverageEdgeLength();
-		d1 *= 64D * renderDistanceWeight;
-		return d < d1 * d1;
 	}
 
 	@Override
@@ -74,41 +95,21 @@ public class EntityRana extends EntityAnimal
 	}
 
 	@Override
-	protected int getDropItemId()
+	public void dropFewItems(boolean byPlayer, int looting)
 	{
-		if(rand.nextInt(100) == 0)
-		{
-			return Item.appleGold.itemID;
-		}
-		if(rand.nextInt(8) == 0)
-		{
-			return Item.appleRed.itemID;
-		}
-		else
-		{
-			return 0;
-		}
+		this.entityDropItem(new ItemStack(EntityRana.APPLE, 1 + this.rand.nextInt(1 + looting)), 0);
 	}
 
 	@Override
-	public int getMaxSpawnedInChunk()
+	public void dropRareDrop(int superRare)
 	{
-		return 1;
+		this.entityDropItem(new ItemStack(EntityRana.GOLDENAPPLE, 1, (superRare != 0) ? 1 : 0), 0);
 	}
 
 	@Override
 	public boolean getCanSpawnHere()
 	{
-		int i = (int)Math.floor(posX);
-		int j = (int)Math.floor(boundingBox.minY);
-		int k = (int)Math.floor(posZ);
-		int l = 0;
-		if(worldObj.getBlockLightValue(i, j, k) < 7)
-		{
-			l = rand.nextInt(2);
-		}
-		boolean flag = (l == 0) && (worldObj.getBlockId(i, j - 1, k) <= 6) && (worldObj.getBlockId(i, j - 1, k) != 0) && super.getCanSpawnHere() && ((ModConfig.rarityRana > 1.0F) || (rand.nextFloat() < ModConfig.rarityRana)) && (getRanaCount() <= ModConfig.limitRana);
-		return flag;
+		return super.getCanSpawnHere();
 	}
 
 	@Override
@@ -117,20 +118,9 @@ public class EntityRana extends EntityAnimal
 		return false;
 	}
 
-	public int getRanaCount()
-	{
-		return worldObj.countEntities(EntityRana.class);
-	}
-
 	@Override
 	public EntityAgeable createChild(EntityAgeable entityageable)
 	{
 		return null;
-	}
-
-	@Override
-	public int getMaxHealth()
-	{
-		return 15;
 	}
 }
